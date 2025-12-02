@@ -1,0 +1,30 @@
+{
+  "name": "brewmate-web",
+  "private": true,
+  "version": "0.0.1",
+  "description": "A web interface for the BrewMate coffee scale",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview"
+  },
+  "dependencies": {
+    "@tailwindcss/vite": "^4.1.17",
+    "lucide-preact": "^0.555.0",
+    "preact": "^10.26.9",
+    "preact-iso": "^2.11.0",
+    "tailwindcss": "^4.1.17"
+  },
+  "devDependencies": {
+    "@preact/preset-vite": "^2.10.2",
+    "@types/node": "^24.10.1",
+    "eslint": "^9.39.1",
+    "eslint-config-preact": "^2.0.0",
+    "typescript": "^5.9.3",
+    "vite": "^7.0.4"
+  },
+  "eslintConfig": {
+    "extends": "preact"
+  }
+}

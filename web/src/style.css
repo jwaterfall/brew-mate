@@ -1,0 +1,6 @@
+@import "tailwindcss";
+
+@theme {
+  --font-family-serif: "Playfair Display", serif;
+  --font-family-sans: "Bebas Neue", sans-serif;
+}
