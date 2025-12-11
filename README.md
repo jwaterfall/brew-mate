@@ -24,12 +24,13 @@ BrewMate features a compact form factor of 80×80×18mm. I'm redesigning the sca
 
 To fit my more compact case design, some component modifications are needed compared to the standard WeighMyBru BOM. The following table details the components that fit in this compact case:
 
-| Component                     | Differences                                                                                                                                 | Image                                |
-| ----------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------ |
-| **HX711 Load Cell Amplifier** | Uses the compact version without screw holes (instead of the large version with screw holes). Required to fit within the smaller enclosure. | ![HX711 Compact](assets/hx711.jpg)   |
-| **TTP223 Touch Sensors**      | Uses compact version with red PCB (instead of standard size). Necessary for the reduced space.                                              | ![TTP223 Compact](assets/ttp223.jpg) |
-| **Battery**                   | Uses 102050 battery (10mm × 20mm × 50mm) instead of various sizes. Battery sizing is less forgiving due to the small enclosure.             | ![102050 Battery](assets/102050.jpg) |
-| **Switch**                    | Uses 4mm stem switch (optional, instead of 5mm stem). A 5mm switch will work but will stick out further and can be cut to length if needed. | ![Switch](assets/ss12d00.jpg)        |
+| Component                     | Differences                                                                                                                                 | Image                                   |
+| ----------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------- |
+| **HX711 Load Cell Amplifier** | Uses the compact version without screw holes (instead of the large version with screw holes). Required to fit within the smaller enclosure. | ![HX711 Compact](assets/hx711.jpg)      |
+| **TTP223 Touch Sensors**      | Uses compact version with red PCB (instead of standard size). Necessary for the reduced space.                                              | ![TTP223 Compact](assets/ttp223.jpg)    |
+| **Battery**                   | Uses 102050 battery (10mm × 20mm × 50mm) instead of various sizes. Battery sizing is less forgiving due to the small enclosure.             | ![102050 Battery](assets/102050.jpg)    |
+| **Switch**                    | Uses 4mm stem switch (optional, instead of 5mm stem). A 5mm switch will work but will stick out further and can be cut to length if needed. | ![Switch](assets/ss12d00.jpg)           |
+| **Load Cell Screws**          | Uses 4× M3x10mm button head screws (instead of M3x12mm). Required for the more compact case design.                                         | ![Load Cell Screws](assets/m3x10mm.jpg) |
 
 ## Features
 
