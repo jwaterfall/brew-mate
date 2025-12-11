@@ -1,27 +1,33 @@
 # BrewMate
 
-A compact coffee scale project for precise espresso brewing measurements.
+BrewMate is a compact coffee scale project derived from [WeighMyBru](https://github.com/031devstudios/weighmybru2), a DIY scale project. Even though the 3D models and code for BrewMate were written from scratch, the project is fundamentally derived from WeighMyBru. The motivation for creating BrewMate was to make the scale more compact and to redesign both the scale and web user interfaces to fit my preferences.
 
-## Description
+BrewMate features a compact form factor of 80×80×18mm. The scale UI is being redesigned to have a more informative main screen with battery status, Bluetooth, and WiFi status indicators. The project also includes extra hardware modifications to support battery charging detection (VBUS voltage detection using a voltage divider) and battery disconnect detection (3rd switch pin).
 
-BrewMate is a custom-built coffee scale designed for accurate weight and flow rate measurements during espresso extraction. The project features a compact form factor with a custom user interface optimized for the espresso workflow.
+## Software Status
 
-## Credits
-
-While the code and 3D models for BrewMate were written from the ground up, this project is heavily inspired by the [WeighMyBru](https://github.com/031devstudios/weighmybru2) project. BrewMate uses the same electronics layout and similar components as weighmybru, and the code architecture was heavily inspired by their implementation.
-
-The motivation for creating BrewMate was to build something smaller and less bulky than existing solutions, while developing custom user interfaces tailored to my preferences.
+⚠️ **Important**: The BrewMate software is currently a work in progress (WIP) and is not ready for use. However, the compact case and alternative hardware can be used with the [WeighMyBru software](https://github.com/031devstudios/weighmybru2).
 
 ## Hardware
 
 - ESP32-based microcontroller
   - XIAO ESP32C6
-  - ESP32S3 SuperMini
 - HX711 load cell amplifier
 - SSD1306 OLED display (128x32)
 - TTP223 touch sensors
 - 500g load cell
 - 3.7V 1000mAh battery
+
+## Hardware Differences from WeighMyBru
+
+The BrewMate case is designed to be more compact than the standard WeighMyBru case, which requires some component modifications to fit properly. The following table details the differences between the standard WeighMyBru BOM and the components that fit in this compact case:
+
+| Component                     | Differences                                                                                                                                 | Image                                |
+| ----------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------ |
+| **HX711 Load Cell Amplifier** | Uses the compact version without screw holes (instead of the large version with screw holes). Required to fit within the smaller enclosure. | ![HX711 Compact](assets/hx711.jpg)   |
+| **TTP223 Touch Sensors**      | Uses compact version with red PCB (instead of standard size). Necessary for the reduced space.                                              | ![TTP223 Compact](assets/ttp223.jpg) |
+| **Battery**                   | Uses 102050 battery (10mm × 20mm × 50mm) instead of various sizes. Battery sizing is less forgiving due to the small enclosure.             | ![102050 Battery](assets/102050.jpg) |
+| **Switch**                    | Uses 4mm stem switch (optional, instead of 5mm stem). A 5mm switch will work but will stick out further and can be cut to length if needed. | ![Switch](assets/ss12d00.jpg)        |
 
 ## Features
 
@@ -76,6 +82,10 @@ The scale includes a WiFi Access Point mode for initial setup. When powered on, 
 - `POST /api/tare` - Tares the scale
 
 The display will show a WiFi AP icon when the access point is active (during initial setup). Once connected to your WiFi network, the device operates in client mode.
+
+## Credits
+
+This project is derived from the [WeighMyBru](https://github.com/031devstudios/weighmybru2) project. While the 3D models and code for BrewMate were written from scratch, the project builds upon the WeighMyBru foundation.
 
 ## License
 
