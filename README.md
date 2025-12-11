@@ -1,8 +1,10 @@
 # BrewMate
 
-BrewMate is a compact coffee scale project derived from [WeighMyBru](https://github.com/031devstudios/weighmybru2), a DIY scale project. Even though the 3D models and code for BrewMate were written from scratch, the project is fundamentally derived from WeighMyBru. The motivation for creating BrewMate was to make the scale more compact and to redesign both the scale and web user interfaces to fit my preferences.
+BrewMate is my personal take on a compact coffee scale, derived from [WeighMyBru](https://github.com/031devstudios/weighmybru2). This isn't meant to be a replacement for WeighMyBru—it's just something I designed for myself to suit my preferences, and I'm sharing it in case anyone else wants it too.
 
-BrewMate features a compact form factor of 80×80×18mm. The scale UI is being redesigned to have a more informative main screen with battery status, Bluetooth, and WiFi status indicators. The project also includes extra hardware modifications to support battery charging detection (VBUS voltage detection using a voltage divider) and battery disconnect detection (3rd switch pin).
+Even though the 3D models and code for BrewMate were written from scratch, the project is fundamentally derived from WeighMyBru. I wanted to make the scale more compact and redesign both the scale and web user interfaces to fit my preferences.
+
+BrewMate features a compact form factor of 80×80×18mm. I'm redesigning the scale UI to have a more informative main screen with battery status, Bluetooth, and WiFi status indicators. The project also includes extra hardware modifications to support battery charging detection (VBUS voltage detection using a voltage divider) and battery disconnect detection (3rd switch pin).
 
 ## Software Status
 
@@ -20,7 +22,7 @@ BrewMate features a compact form factor of 80×80×18mm. The scale UI is being r
 
 ## Hardware Differences from WeighMyBru
 
-The BrewMate case is designed to be more compact than the standard WeighMyBru case, which requires some component modifications to fit properly. The following table details the differences between the standard WeighMyBru BOM and the components that fit in this compact case:
+To fit my more compact case design, some component modifications are needed compared to the standard WeighMyBru BOM. The following table details the components that fit in this compact case:
 
 | Component                     | Differences                                                                                                                                 | Image                                |
 | ----------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------ |
@@ -85,7 +87,7 @@ The display will show a WiFi AP icon when the access point is active (during ini
 
 ## Credits
 
-This project is derived from the [WeighMyBru](https://github.com/031devstudios/weighmybru2) project. While the 3D models and code for BrewMate were written from scratch, the project builds upon the WeighMyBru foundation.
+This project is derived from the [WeighMyBru](https://github.com/031devstudios/weighmybru2) project. While the 3D models and code for BrewMate were written from scratch, the project builds upon the WeighMyBru foundation. Thanks to the WeighMyBru project for the inspiration and foundation!
 
 ## License
 
