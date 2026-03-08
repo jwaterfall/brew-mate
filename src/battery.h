@@ -13,12 +13,14 @@ private:
     float maxVoltage;
     float batteryDividerRatio;
     float batteryCalibrationFactor;
+    float vbusDividerRatio;
+    float vbusCalibrationFactor;
     float lastBatteryVoltage;
     float lastVbusVoltage;
     unsigned long lastUpdate;
 
     static constexpr int ADC_SAMPLES = 10;
-    static constexpr unsigned long UPDATE_INTERVAL = 100;
+    static constexpr unsigned long UPDATE_INTERVAL = 1000;
     static constexpr float PERCENTAGE_VOLTAGE_4_0 = 4.0f;
     static constexpr float PERCENTAGE_VOLTAGE_3_7 = 3.7f;
     static constexpr float PERCENTAGE_VOLTAGE_3_5 = 3.5f;
@@ -29,8 +31,6 @@ private:
     static constexpr uint8_t PERCENTAGE_AT_3_7_RANGE = 50;
     static constexpr uint8_t PERCENTAGE_AT_4_0_RANGE = 20;
     static constexpr uint8_t PERCENTAGE_AT_MAX_RANGE = 20;
-    static constexpr uint8_t LOW_BATTERY_THRESHOLD = 20;
-    static constexpr uint8_t BATTERY_BAR_COUNT = 3;
 
     float readVoltage(uint8_t pin, float dividerRatio) {
         uint32_t sum = 0;
@@ -43,8 +43,8 @@ private:
     }
     
 public:
-    Battery(uint8_t batteryPin = BATTERY_PIN, uint8_t vbusPin = VBUS_PIN, uint8_t batterySwitchPin = BATTERY_SWITCH_PIN, float minV = 3.0f, float maxV = 4.19f, float batteryDivider = 2.0f) 
-        : batteryPin(batteryPin), vbusPin(vbusPin), batterySwitchPin(batterySwitchPin), minVoltage(minV), maxVoltage(maxV), batteryDividerRatio(batteryDivider), batteryCalibrationFactor(1.0f), lastBatteryVoltage(0.0f), lastVbusVoltage(0.0f), lastUpdate(0) {
+    Battery(uint8_t batteryPin = BATTERY_PIN, uint8_t vbusPin = VBUS_PIN, uint8_t batterySwitchPin = BATTERY_SWITCH_PIN, float minV = 3.0f, float maxV = 4.19f, float batteryDivider = 2.0f, float vbusDivider = 2.0f) 
+        : batteryPin(batteryPin), vbusPin(vbusPin), batterySwitchPin(batterySwitchPin), minVoltage(minV), maxVoltage(maxV), batteryDividerRatio(batteryDivider), batteryCalibrationFactor(1.0f), vbusDividerRatio(vbusDivider), vbusCalibrationFactor(1.0f), lastBatteryVoltage(0.0f), lastVbusVoltage(0.0f), lastUpdate(0) {
         pinMode(batteryPin, INPUT);
         pinMode(vbusPin, INPUT);
         pinMode(batterySwitchPin, INPUT_PULLUP);
@@ -53,9 +53,9 @@ public:
     float getVoltage() {
         unsigned long currentTime = millis();
         
-        if (currentTime - lastUpdate >= UPDATE_INTERVAL) {
+        if (currentTime - lastUpdate > UPDATE_INTERVAL) {
             lastBatteryVoltage = readVoltage(batteryPin, batteryDividerRatio) * batteryCalibrationFactor;
-            lastVbusVoltage = readVoltage(vbusPin, 2.0f);
+            lastVbusVoltage = readVoltage(vbusPin, vbusDividerRatio) * vbusCalibrationFactor;
             lastUpdate = currentTime;
         }
         
@@ -93,10 +93,6 @@ public:
         return 1;
     }
     
-    bool isLow() {
-        return getPercentage() < LOW_BATTERY_THRESHOLD;
-    }
-    
     bool isUsbConnected() {
         getVoltage();
         return lastVbusVoltage > 2.5f;
@@ -116,6 +112,19 @@ public:
     
     float getCalibrationFactor() {
         return batteryCalibrationFactor;
+    }
+    
+    void setVbusCalibrationFactor(float factor) {
+        vbusCalibrationFactor = factor;
+    }
+    
+    float getVbusCalibrationFactor() {
+        return vbusCalibrationFactor;
+    }
+    
+    float getVbusVoltage() {
+        getVoltage();
+        return lastVbusVoltage;
     }
 };
 

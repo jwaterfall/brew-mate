@@ -61,7 +61,7 @@ public:
     float getWeight() {
         if (!initialized) return 0.0f;
         
-        float rawWeight = scale.get_units(3);
+        float rawWeight = scale.get_units();
         
         if (abs(rawWeight) < 0.3f) {
             return 0.0f;

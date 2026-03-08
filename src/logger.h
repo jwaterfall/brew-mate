@@ -59,6 +59,6 @@ public:
     }
 };
 
-LogLevel Logger::level = LogLevel::Info;
+inline LogLevel Logger::level = LogLevel::Info;
 
 #endif

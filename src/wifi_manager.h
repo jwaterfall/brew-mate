@@ -4,24 +4,52 @@
 #include <Arduino.h>
 #include <WiFi.h>
 #include <ESPAsyncWebServer.h>
-#include <AsyncJson.h>
 #include <LittleFS.h>
 #include "logger.h"
-
-class Battery;
-class Scale;
+#include "config_manager.h"
+#include "api_handler.h"
 
 class WiFiManager {
 private:
     AsyncWebServer server;
+    ApiHandler* apiHandler;
     bool apMode;
     bool initialized;
-    Battery* battery;
-    Scale* scale;
+    bool wifiConnected;
+    String connectedSSID;
+    IPAddress connectedIP;
+    
+    bool connectToWiFi(const String& ssid, const String& password, int timeoutSeconds = 15) {
+        Logger::info("Connecting to WiFi: %s", ssid.c_str());
+        
+        WiFi.mode(WIFI_STA);
+        WiFi.begin(ssid.c_str(), password.c_str());
+        
+        unsigned long startTime = millis();
+
+        while (WiFi.status() != WL_CONNECTED && (millis() - startTime) < (timeoutSeconds * 1000)) {
+            delay(500);
+            Serial.print(".");
+        }
+
+        Serial.println();
+        
+        if (WiFi.status() == WL_CONNECTED) {
+            wifiConnected = true;
+            connectedSSID = ssid;
+            connectedIP = WiFi.localIP();
+            Logger::info("WiFi connected! IP: %s", connectedIP.toString().c_str());
+            return true;
+        } else {
+            Logger::warn("WiFi connection failed");
+            wifiConnected = false;
+            return false;
+        }
+    }
     
     void setupAP() {
         Logger::info("Setting up WiFi Access Point");
-        WiFi.mode(WIFI_AP);
+        WiFi.mode(WIFI_AP_STA);
         WiFi.softAP(getAPSSID(), getAPPassword());
         WiFi.softAPConfig(getAPIP(), getAPGateway(), getAPSubnet());
         apMode = true;
@@ -31,74 +59,21 @@ private:
     }
     
     void setupRoutes() {
-        registerRoute("/api/status", HTTP_GET, [this](AsyncWebServerRequest *request) {
-            this->handleStatus(request);
-        });
+        // Setup API routes
+        apiHandler->setupRoutes();
         
-        registerRoute("/api/tare", HTTP_POST, [this](AsyncWebServerRequest *request) {
-            this->handleTare(request);
-        });
-        
+        // Setup static file serving
         server.serveStatic("/", LittleFS, "/").setDefaultFile("index.html");
         
+        // Handle non-API 404s (fallback to index.html for SPA routing)
         server.onNotFound([this](AsyncWebServerRequest *request) {
-            if (request->url().startsWith("/api/")) {
-                sendJsonError(request, "Not found", 404);
-                return;
+            if (!request->url().startsWith("/api/")) {
+                request->send(LittleFS, "/index.html", "text/html");
             }
-            request->send(LittleFS, "/index.html", "text/html");
         });
         
         server.begin();
         Logger::info("Web server started");
-    }
-    
-    void registerRoute(const char* uri, WebRequestMethodComposite method, ArRequestHandlerFunction handler) {
-        server.on(uri, method, handler);
-    }
-    
-    void sendJsonResponse(AsyncWebServerRequest *request, std::function<void(JsonObject&)> buildJson, int code = 200) {
-        AsyncJsonResponse *response = new AsyncJsonResponse();
-        JsonObject root = response->getRoot().to<JsonObject>();
-        buildJson(root);
-        response->setLength();
-        request->send(response);
-    }
-    
-    void sendJsonError(AsyncWebServerRequest *request, const char* error, int code = 400) {
-        sendJsonResponse(request, [error](JsonObject& root) {
-            root["error"] = error;
-        }, code);
-    }
-    
-    void sendJsonSuccess(AsyncWebServerRequest *request, int code = 200) {
-        sendJsonResponse(request, [](JsonObject& root) {
-            root["success"] = true;
-        }, code);
-    }
-    
-    void handleStatus(AsyncWebServerRequest *request) {
-        if (!battery || !scale) {
-            sendJsonError(request, "Service not initialized", 503);
-            return;
-        }
-        
-        sendJsonResponse(request, [this](JsonObject& root) {
-            root["weight"] = scale->getWeight();
-            root["batteryPercent"] = battery->getPercentage();
-            root["batteryVoltage"] = battery->getVoltage();
-            root["usbConnected"] = battery->isUsbConnected();
-        });
-    }
-    
-    void handleTare(AsyncWebServerRequest *request) {
-        if (!scale) {
-            sendJsonError(request, "Scale not initialized", 503);
-            return;
-        }
-        
-        scale->tare();
-        sendJsonSuccess(request);
     }
     
     static const char* getAPSSID() {
@@ -122,7 +97,13 @@ private:
     }
     
 public:
-    WiFiManager() : server(80), apMode(false), initialized(false), battery(nullptr), scale(nullptr) {}
+    WiFiManager() : server(80), apiHandler(nullptr), apMode(false), initialized(false), wifiConnected(false) {}
+    
+    ~WiFiManager() {
+        if (apiHandler) {
+            delete apiHandler;
+        }
+    }
     
     bool begin() {
         Logger::info("Initializing WiFi Manager");
@@ -133,7 +114,28 @@ public:
         }
         Logger::info("LittleFS initialized");
         
-        setupAP();
+        // Load config
+        DeviceConfig config = ConfigManager::load();
+        
+        // Try to load and connect to saved WiFi credentials
+        if (config.wifi.ssid.length() > 0) {
+            if (connectToWiFi(config.wifi.ssid, config.wifi.password)) {
+                // Connected successfully, no AP mode needed
+                Logger::info("WiFi connected successfully, AP mode disabled");
+            } else {
+                // Connection failed, fall back to AP mode
+                Logger::warn("WiFi connection failed, starting AP mode");
+                setupAP();
+            }
+        } else {
+            // No saved credentials, start AP mode
+            Logger::info("No saved WiFi credentials, starting AP mode");
+            setupAP();
+        }
+        
+        // Create and setup API handler
+        apiHandler = new ApiHandler(server);
+        apiHandler->setWiFiManager(this);
         setupRoutes();
         
         initialized = true;
@@ -143,11 +145,15 @@ public:
     void update() {}
     
     void setBattery(Battery* bat) {
-        battery = bat;
+        if (apiHandler) {
+            apiHandler->setBattery(bat);
+        }
     }
     
     void setScale(Scale* scl) {
-        scale = scl;
+        if (apiHandler) {
+            apiHandler->setScale(scl);
+        }
     }
     
     bool isApMode() const {
@@ -156,6 +162,18 @@ public:
     
     bool isInitialized() const {
         return initialized;
+    }
+    
+    bool isWiFiConnected() const {
+        return wifiConnected;
+    }
+    
+    String getConnectedSSID() const {
+        return connectedSSID;
+    }
+    
+    IPAddress getConnectedIP() const {
+        return connectedIP;
     }
     
     AsyncWebServer& getServer() {

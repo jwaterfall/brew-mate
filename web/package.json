@@ -11,9 +11,11 @@
   },
   "dependencies": {
     "@tailwindcss/vite": "^4.1.17",
+    "class-variance-authority": "^0.7.1",
     "lucide-preact": "^0.555.0",
     "preact": "^10.26.9",
     "preact-iso": "^2.11.0",
+    "tailwind-merge": "^3.4.0",
     "tailwindcss": "^4.1.17"
   },
   "devDependencies": {

@@ -3,13 +3,14 @@ import { Loader2 } from "lucide-preact";
 
 import { WeightCard } from "../../components/WeightCard";
 import { BatteryCard } from "../../components/BatteryCard";
-import { UsbCard } from "../../components/UsbCard";
+import { apiUrl } from "../../utils/api";
 
 interface ScaleStatus {
   weight: number;
   batteryPercent: number;
   batteryVoltage: number;
   usbConnected: boolean;
+  batteryDisconnected: boolean;
 }
 
 export function Home() {
@@ -18,13 +19,14 @@ export function Home() {
     batteryPercent: 0,
     batteryVoltage: 0,
     usbConnected: false,
+    batteryDisconnected: false,
   });
   const [isLoading, setIsLoading] = useState(true);
   const [isTaring, setIsTaring] = useState(false);
 
   const fetchStatus = async () => {
     try {
-      const response = await fetch("/api/status");
+      const response = await fetch(apiUrl("/api/status"));
       if (!response.ok) {
         throw new Error("Service unavailable");
       }
@@ -40,7 +42,7 @@ export function Home() {
   const handleTare = async () => {
     setIsTaring(true);
     try {
-      const response = await fetch("/api/tare", {
+      const response = await fetch(apiUrl("/api/tare"), {
         method: "POST",
       });
       const result = await response.json();
@@ -69,14 +71,12 @@ export function Home() {
       <div class="max-w-lg mx-auto py-4 px-4 sm:px-6 lg:px-8 space-y-4">
         <WeightCard weight={status.weight} isLoading={isLoading} />
 
-        <div class="grid grid-cols-2 gap-4">
-          <BatteryCard
-            batteryPercent={status.batteryPercent}
-            batteryVoltage={status.batteryVoltage}
-            usbConnected={status.usbConnected}
-          />
-          <UsbCard usbConnected={status.usbConnected} />
-        </div>
+        <BatteryCard
+          batteryPercent={status.batteryPercent}
+          batteryVoltage={status.batteryVoltage}
+          usbConnected={status.usbConnected}
+          batteryDisconnected={status.batteryDisconnected}
+        />
 
         <button
           onClick={handleTare}

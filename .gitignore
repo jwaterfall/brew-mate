@@ -17,6 +17,10 @@ dist-ssr
 .cache/
 data/
 
+# Environment variables
+.env
+.env.local
+
 # PlatformIO
 .pio
 .vscode/.browse.c_cpp.db*

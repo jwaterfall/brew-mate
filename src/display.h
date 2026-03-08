@@ -177,8 +177,8 @@ public:
         if (!initialized) return;
         
         clear();
-        display.drawBitmap(2, 8, logoBitmap, 16, 16, 1);
-        drawText(26, 12, 2, "BrewMate");
+        display.drawBitmap(2, 6, logoBitmap, 16, 16, 1);
+        drawText(26, 10, 2, "BrewMate");
         show();
     }
     
