@@ -59,6 +59,7 @@ struct DisplayState {
 struct ScaleOutputs {
     DisplayState display;
     BatteryResult battery;  // full battery state (for the on-device web API)
+    float weight;           // smoothed weight for the API/BLE (display uses a stabilized value)
     bool playBuzzer;        // a touch/tare was acknowledged this tick
 };
 
@@ -68,16 +69,21 @@ class WeightProcessor {
 public:
     WeightProcessor();
     void addSample(int32_t raw, float calFactor);
-    void tare();          // offset = current smoothed reading
-    float grams() const;  // calibrated, deadbanded weight
+    void tare();             // offset = current smoothed reading
+    float grams() const;     // calibrated, deadbanded weight (responsive; flow + API/BLE)
+    float displayGrams();    // stabilized for the screen (holds steady until a real change)
 
 private:
     static constexpr float SMOOTHING = 0.3f;
     static constexpr float DEADBAND_G = 0.3f;
+    // The screen only moves once the weight shifts by more than this, so sensor
+    // noise can't flicker the last displayed digit while the value sits still.
+    static constexpr float DISPLAY_HYSTERESIS_G = 0.2f;
 
     float rawSmoothed;
     float offset;
     float calFactor;
+    float displayed;
     bool haveSample;
 };
 
@@ -95,9 +101,13 @@ private:
     static constexpr float MAX_VOLTAGE = 4.19f;
     static constexpr float SMOOTHING = 0.1f;
     static constexpr float USB_THRESHOLD = 2.5f;
+    // Hold the displayed % until it shifts by more than this, so a steep
+    // voltage->% curve can't jitter the reading while the pack sits idle.
+    static constexpr uint8_t PERCENT_HYSTERESIS = 2;
 
     float batterySmoothed;
     float vbusSmoothed;
+    uint8_t displayedPercent;
     bool haveSample;
 
     uint8_t percentageFromVoltage(float voltage) const;

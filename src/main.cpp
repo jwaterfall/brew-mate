@@ -158,7 +158,7 @@ void loop() {
         // Always run the core so the web API / BLE weight stay live, even while
         // a host is driving the display in proxy mode.
         ScaleOutputs out = app.tick(in);
-        deviceState.weight = out.display.weight;
+        deviceState.weight = out.weight;
         deviceState.batteryPercent = out.battery.percent;
         deviceState.batteryVoltage = out.battery.voltage;
         deviceState.usbConnected = out.battery.usb;

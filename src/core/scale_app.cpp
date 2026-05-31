@@ -6,7 +6,7 @@
 // ----- WeightProcessor -------------------------------------------------------
 
 WeightProcessor::WeightProcessor()
-    : rawSmoothed(0.0f), offset(0.0f), calFactor(1.0f), haveSample(false) {}
+    : rawSmoothed(0.0f), offset(0.0f), calFactor(1.0f), displayed(0.0f), haveSample(false) {}
 
 void WeightProcessor::addSample(int32_t raw, float cal) {
     if (cal != 0.0f) calFactor = cal;
@@ -21,6 +21,7 @@ void WeightProcessor::addSample(int32_t raw, float cal) {
 
 void WeightProcessor::tare() {
     offset = rawSmoothed;
+    displayed = 0.0f;  // snap the screen to zero immediately
 }
 
 float WeightProcessor::grams() const {
@@ -30,10 +31,18 @@ float WeightProcessor::grams() const {
     return g;
 }
 
+float WeightProcessor::displayGrams() {
+    float g = grams();
+    if (std::fabs(g - displayed) >= DISPLAY_HYSTERESIS_G) {
+        displayed = g;
+    }
+    return displayed;
+}
+
 // ----- BatteryProcessor ------------------------------------------------------
 
 BatteryProcessor::BatteryProcessor()
-    : batterySmoothed(0.0f), vbusSmoothed(0.0f), haveSample(false) {}
+    : batterySmoothed(0.0f), vbusSmoothed(0.0f), displayedPercent(0), haveSample(false) {}
 
 uint8_t BatteryProcessor::percentageFromVoltage(float voltage) const {
     if (voltage <= MIN_VOLTAGE) return 0;
@@ -60,7 +69,8 @@ BatteryResult BatteryProcessor::process(uint16_t batteryMv, uint16_t vbusMv,
     float battV = (batteryMv / 1000.0f) * DIVIDER_RATIO * batteryCal;
     float vbusV = (vbusMv / 1000.0f) * DIVIDER_RATIO * vbusCal;
 
-    if (!haveSample) {
+    bool firstSample = !haveSample;
+    if (firstSample) {
         batterySmoothed = battV;
         vbusSmoothed = vbusV;
         haveSample = true;
@@ -69,9 +79,14 @@ BatteryResult BatteryProcessor::process(uint16_t batteryMv, uint16_t vbusMv,
         vbusSmoothed += SMOOTHING * (vbusV - vbusSmoothed);
     }
 
+    uint8_t pct = percentageFromVoltage(batterySmoothed);
+    int delta = (int)pct - (int)displayedPercent;
+    if (delta < 0) delta = -delta;
+    if (firstSample || delta >= PERCENT_HYSTERESIS) displayedPercent = pct;
+
     BatteryResult r;
     r.voltage = batterySmoothed;
-    r.percent = percentageFromVoltage(batterySmoothed);
+    r.percent = displayedPercent;
     r.usb = vbusSmoothed > USB_THRESHOLD;
     r.charging = r.usb && batterySmoothed < MAX_VOLTAGE;
     r.disconnected = !switchRaw;
@@ -207,6 +222,8 @@ ScaleOutputs ScaleApp::tick(const RawInputs& in) {
     }
 
     float weight = weightProc.grams();
+    out.weight = weight;
+    float displayWeight = weightProc.displayGrams();
 
     if (now - lastAnimationUpdate >= ANIMATION_INTERVAL) {
         animationFrame = (animationFrame + 1) % 4;
@@ -220,7 +237,7 @@ ScaleOutputs ScaleApp::tick(const RawInputs& in) {
     DisplayState& d = out.display;
     d.batteryBarCount = out.battery.bars;
     d.batteryPercent = out.battery.percent;
-    d.weight = weight;
+    d.weight = displayWeight;
     snprintf(d.timerStr, sizeof(d.timerStr), "%02u:%02u", (unsigned)minutes, (unsigned)seconds);
     d.flowRate = computeFlowRate(now, weight);
     d.isCharging = out.battery.charging;

@@ -144,7 +144,9 @@ inline void renderMain(Adafruit_GFX& gfx, const DisplayState& s) {
     }
     if (s.bluetoothConnected) drawBluetoothIcon(gfx);
 
-    if (!s.batteryDisconnected) {
+    // While charging the voltage is distorted by charge current, so the % is
+    // unreliable -- show only the animated charging bars, not a misleading number.
+    if (!s.batteryDisconnected && !s.isCharging) {
         char percentStr[5];
         snprintf(percentStr, sizeof(percentStr), "%d%%", s.batteryPercent);
         drawText(gfx, BATTERY_PERCENT_X, BATTERY_PERCENT_Y, 1, percentStr, 1, true);
