@@ -12,10 +12,10 @@ BIN="$ROOT/host_runner"
 CACHE="$ROOT/.host_build"
 
 WATCH=(
-    "$ROOT/src/scale_app.cpp"
-    "$ROOT/src/scale_app.h"
-    "$ROOT/src/serial_protocol.h"
-    "$ROOT/src/display_render.h"
+    "$ROOT/src/core/scale_app.cpp"
+    "$ROOT/src/core/scale_app.h"
+    "$ROOT/src/core/serial_protocol.h"
+    "$ROOT/src/core/display_render.h"
     "$ROOT/src/host/host_runner.cpp"
 )
 
@@ -31,7 +31,7 @@ GFX_DIR="$(find "$ROOT/.pio/libdeps" -maxdepth 2 -iname "Adafruit GFX Library" -
 [ -z "$GFX_DIR" ] && { echo "Adafruit GFX not found; build the firmware once: pio run -e seeed_xiao_esp32c6" >&2; exit 1; }
 
 # -DARDUINO selects the Arduino.h include path inside Adafruit_GFX.h.
-FLAGS=(-std=gnu++17 -O2 -DARDUINO=10805 -I "$ROOT/src/host/compat" -I "$ROOT/src" -I "$GFX_DIR")
+FLAGS=(-std=gnu++17 -O2 -DARDUINO=10805 -I "$ROOT/src/host/compat" -I "$ROOT/src/core" -I "$GFX_DIR")
 
 build() {
     mkdir -p "$CACHE"
@@ -40,7 +40,7 @@ build() {
     if [ ! -f "$gfx_obj" ] || [ "$GFX_DIR/Adafruit_GFX.cpp" -nt "$gfx_obj" ]; then
         "$CXX" "${FLAGS[@]}" -w -c "$GFX_DIR/Adafruit_GFX.cpp" -o "$gfx_obj" || return 1
     fi
-    "$CXX" "${FLAGS[@]}" -Wall "$ROOT/src/scale_app.cpp" "$ROOT/src/host/host_runner.cpp" "$gfx_obj" -o "$BIN"
+    "$CXX" "${FLAGS[@]}" -Wall "$ROOT/src/core/scale_app.cpp" "$ROOT/src/host/host_runner.cpp" "$gfx_obj" -o "$BIN"
 }
 
 snapshot() { stat -c '%Y' "${WATCH[@]}" 2>/dev/null | tr '\n' ' '; }

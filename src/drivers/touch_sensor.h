@@ -1,5 +1,4 @@
-#ifndef TOUCHSENSOR_H
-#define TOUCHSENSOR_H
+#pragma once
 
 #include <Arduino.h>
 #include "board_config.h"
@@ -21,5 +20,3 @@ public:
     bool readTareRaw() { return digitalRead(tarePin) == HIGH; }
     bool readPowerRaw() { return digitalRead(powerPin) == HIGH; }
 };
-
-#endif

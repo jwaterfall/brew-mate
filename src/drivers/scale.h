@@ -1,11 +1,13 @@
-#ifndef SCALE_H
-#define SCALE_H
+#pragma once
 
 #include <Arduino.h>
 #include <HX711.h>
 #include "board_config.h"
 #include "logger.h"
 
+// Raw HX711 reader. All interpretation (calibration, tare, deadband, smoothing)
+// happens in WeightProcessor (scale_app.h); the calibration factor is stored
+// here only so it can be passed into that processing.
 class Scale {
 private:
     static constexpr float DEFAULT_CALIBRATION_FACTOR = 4466.2f;
@@ -19,12 +21,6 @@ private:
     uint8_t sckPin;
     float calibrationFactor;
     bool initialized;
-
-    // Back the web API: weight processing lives in ScaleApp, so getWeight()
-    // returns the cached processed value and tare() raises a request the main
-    // loop forwards to ScaleApp.
-    float cachedWeight = 0.0f;
-    bool tareRequested = false;
 
 public:
     Scale(uint8_t dout = HX711_DOUT, uint8_t sck = HX711_SCK, float calibration = DEFAULT_CALIBRATION_FACTOR)
@@ -65,18 +61,6 @@ public:
     long readRaw() { return initialized ? scale.read() : 0; }
     bool isReady() { return initialized && scale.is_ready(); }
 
-    float getWeight() { return cachedWeight; }
-    void setCachedWeight(float weight) { cachedWeight = weight; }
-
-    void tare() { tareRequested = true; }
-    bool consumeTareRequest() {
-        bool requested = tareRequested;
-        tareRequested = false;
-        return requested;
-    }
-
     void setCalibrationFactor(float factor) { calibrationFactor = factor; }
     float getCalibrationFactor() { return calibrationFactor; }
 };
-
-#endif

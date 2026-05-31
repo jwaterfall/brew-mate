@@ -1,5 +1,4 @@
-#ifndef SERIAL_PROTOCOL_H
-#define SERIAL_PROTOCOL_H
+#pragma once
 
 // Serial protocol between device and host dev runner. Newline-terminated lines:
 //   "I,..."          device -> host : raw sensor reads (RawInputs)
@@ -101,5 +100,3 @@ inline bool decodeFrame(const char* line, uint8_t* fb, size_t len, bool& buzz) {
 }
 
 }  // namespace protocol
-
-#endif

@@ -1,5 +1,4 @@
-#ifndef DISPLAY_H
-#define DISPLAY_H
+#pragma once
 
 #include <Arduino.h>
 #include <Wire.h>
@@ -59,5 +58,3 @@ public:
         display.display();
     }
 };
-
-#endif

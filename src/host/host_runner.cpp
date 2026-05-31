@@ -13,9 +13,9 @@
 #include <unistd.h>
 #include <errno.h>
 
-#include "../scale_app.h"
-#include "../serial_protocol.h"
-#include "../display_render.h"
+#include "scale_app.h"
+#include "serial_protocol.h"
+#include "display_render.h"
 
 static int openSerial(const char* port) {
     int fd = open(port, O_RDWR | O_NOCTTY);

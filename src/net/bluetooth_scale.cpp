@@ -1,5 +1,5 @@
 #include "bluetooth_scale.h"
-#include "scale.h"
+#include "device_state.h"
 
 const char* BluetoothScale::SERVICE_UUID = "6E400001-B5A3-F393-E0A9-E50E24DCCA9E";
 const char* BluetoothScale::GAGGIMATE_CHARACTERISTIC_UUID = "6E400002-B5A3-F393-E0A9-E50E24DCCA9E";
@@ -7,7 +7,7 @@ const char* BluetoothScale::BEAN_CONQUEROR_CHARACTERISTIC_UUID = "6E400004-B5A3-
 const char* BluetoothScale::COMMAND_CHARACTERISTIC_UUID = "6E400003-B5A3-F393-E0A9-E50E24DCCA9E";
 
 BluetoothScale::BluetoothScale()
-    : scale(nullptr)
+    : deviceState(nullptr)
     , server(nullptr)
     , service(nullptr)
     , gaggiMateWeightCharacteristic(nullptr)
@@ -27,8 +27,8 @@ BluetoothScale::~BluetoothScale() {
     end();
 }
 
-void BluetoothScale::begin(Scale* scaleInstance) {
-    scale = scaleInstance;
+void BluetoothScale::begin(DeviceState* state) {
+    deviceState = state;
     NimBLEDevice::init("WeighMyBru");
     NimBLEDevice::setPower(3);
 
@@ -97,7 +97,7 @@ void BluetoothScale::stopAdvertising() {
 }
 
 void BluetoothScale::update() {
-    if (!scale) {
+    if (!deviceState) {
         return;
     }
 
@@ -118,7 +118,7 @@ void BluetoothScale::update() {
 
     if (deviceConnected) {
         if (now - lastWeightSent >= WEIGHT_SEND_INTERVAL) {
-            float currentWeight = scale->getWeight();
+            float currentWeight = deviceState->weight;
             sendGaggiMateWeight(currentWeight);
             sendBeanConquerorWeight(currentWeight);
             lastWeight = currentWeight;
@@ -220,8 +220,8 @@ uint8_t BluetoothScale::calculateChecksum(const uint8_t* data, size_t length) co
 void BluetoothScale::handleTareCommand() {
     if (tareCallback) {
         tareCallback();
-    } else if (scale) {
-        scale->tare();
+    } else if (deviceState) {
+        deviceState->requestTare();
     }
 
     uint8_t payload[] = {0x03, 0x0a, 0x01, 0x00, 0x00};

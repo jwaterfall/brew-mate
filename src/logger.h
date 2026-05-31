@@ -1,5 +1,4 @@
-#ifndef LOGGER_H
-#define LOGGER_H
+#pragma once
 
 #include <Arduino.h>
 #include <stdarg.h>
@@ -60,5 +59,3 @@ public:
 };
 
 inline LogLevel Logger::level = LogLevel::Info;
-
-#endif

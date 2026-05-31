@@ -1,5 +1,4 @@
-#ifndef BUZZER_H
-#define BUZZER_H
+#pragma once
 
 #include <Arduino.h>
 #include <driver/gpio.h>
@@ -51,6 +50,3 @@ public:
         }
     }
 };
-
-#endif
-

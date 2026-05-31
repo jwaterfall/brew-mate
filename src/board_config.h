@@ -1,5 +1,4 @@
-#ifndef BOARD_CONFIG_H
-#define BOARD_CONFIG_H
+#pragma once
 
 #ifdef BOARD_XIAO_ESP32C6
     #define SDA_PIN 20
@@ -26,6 +25,3 @@
 #else
     #error "Unknown board. Please define BOARD_XIAO_ESP32C6 or BOARD_ESP32S3_SUPERMINI in platformio.ini"
 #endif
-
-#endif
-

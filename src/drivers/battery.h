@@ -1,12 +1,12 @@
-#ifndef BATTERY_H
-#define BATTERY_H
+#pragma once
 
 #include <Arduino.h>
 #include "board_config.h"
 
-// Raw reader for the battery sense pins; interpretation lives in
-// BatteryProcessor (scale_app.h). Processed values are cached here for the
-// web API, pushed in by the main loop.
+// Raw reader for the battery sense pins. Interpretation (averaging, divider,
+// calibration, voltage->% curve, USB/charging/disconnect detection) lives in
+// BatteryProcessor (scale_app.h). The calibration factors are stored here so
+// they can be persisted and passed into that processing.
 class Battery {
 private:
     uint8_t batteryPin;
@@ -14,12 +14,6 @@ private:
     uint8_t batterySwitchPin;
     float batteryCalibrationFactor;
     float vbusCalibrationFactor;
-
-    // Cached processed state for the web API.
-    float cachedVoltage = 0.0f;
-    uint8_t cachedPercent = 0;
-    bool cachedUsb = false;
-    bool cachedDisconnected = false;
 
 public:
     Battery(uint8_t batteryPin = BATTERY_PIN, uint8_t vbusPin = VBUS_PIN, uint8_t batterySwitchPin = BATTERY_SWITCH_PIN)
@@ -34,22 +28,8 @@ public:
     uint16_t readVbusMv() { return (uint16_t)analogReadMilliVolts(vbusPin); }
     bool readSwitchRaw() { return digitalRead(batterySwitchPin) == HIGH; }
 
-    void setCached(float voltage, uint8_t percent, bool usb, bool disconnected) {
-        cachedVoltage = voltage;
-        cachedPercent = percent;
-        cachedUsb = usb;
-        cachedDisconnected = disconnected;
-    }
-
-    float getVoltage() { return cachedVoltage; }
-    uint8_t getPercentage() { return cachedPercent; }
-    bool isUsbConnected() { return cachedUsb; }
-    bool isBatteryDisconnected() { return cachedDisconnected; }
-
     void setCalibrationFactor(float factor) { batteryCalibrationFactor = factor; }
     float getCalibrationFactor() { return batteryCalibrationFactor; }
     void setVbusCalibrationFactor(float factor) { vbusCalibrationFactor = factor; }
     float getVbusCalibrationFactor() { return vbusCalibrationFactor; }
 };
-
-#endif

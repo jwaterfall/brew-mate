@@ -1,5 +1,4 @@
-#ifndef DISPLAY_RENDER_H
-#define DISPLAY_RENDER_H
+#pragma once
 
 // Shared screen rendering, drawn into any Adafruit_GFX surface: the real
 // SSD1306 on-device and a GFXcanvas1 on the host, so the OLED is pixel-identical
@@ -175,5 +174,3 @@ inline void renderBoot(Adafruit_GFX& gfx) {
 }
 
 }  // namespace screen
-
-#endif

@@ -1,10 +1,10 @@
 #include "api_handler.h"
 #include "wifi_manager.h"
 #include "battery.h"
-#include "scale.h"
+#include "device_state.h"
 
-ApiHandler::ApiHandler(AsyncWebServer& server) 
-    : server(server), battery(nullptr), scale(nullptr), wifiManager(nullptr) {}
+ApiHandler::ApiHandler(AsyncWebServer& server)
+    : server(server), battery(nullptr), deviceState(nullptr), wifiManager(nullptr) {}
 
 void ApiHandler::handleCors(AsyncWebServerRequest *request) {
     AsyncWebServerResponse *response = request->beginResponse(204);
@@ -46,17 +46,17 @@ void ApiHandler::registerRoute(const char* uri, WebRequestMethodComposite method
 }
 
 void ApiHandler::handleStatus(AsyncWebServerRequest *request) {
-    if (!battery || !scale || !wifiManager) {
+    if (!deviceState || !wifiManager) {
         sendJsonError(request, "Service not initialized", 503);
         return;
     }
-    
+
     sendJsonResponse(request, [this](JsonObject& root) {
-        root["weight"] = scale->getWeight();
-        root["batteryPercent"] = battery->getPercentage();
-        root["batteryVoltage"] = battery->getVoltage();
-        root["usbConnected"] = battery->isUsbConnected();
-        root["batteryDisconnected"] = battery->isBatteryDisconnected();
+        root["weight"] = deviceState->weight;
+        root["batteryPercent"] = deviceState->batteryPercent;
+        root["batteryVoltage"] = deviceState->batteryVoltage;
+        root["usbConnected"] = deviceState->usbConnected;
+        root["batteryDisconnected"] = deviceState->batteryDisconnected;
         root["wifiConnected"] = wifiManager->isWiFiConnected();
         root["wifiApMode"] = wifiManager->isApMode();
         if (wifiManager->isWiFiConnected()) {
@@ -67,12 +67,12 @@ void ApiHandler::handleStatus(AsyncWebServerRequest *request) {
 }
 
 void ApiHandler::handleTare(AsyncWebServerRequest *request) {
-    if (!scale) {
-        sendJsonError(request, "Scale not initialized", 503);
+    if (!deviceState) {
+        sendJsonError(request, "Service not initialized", 503);
         return;
     }
-    
-    scale->tare();
+
+    deviceState->requestTare();
     sendJsonSuccess(request);
 }
 
@@ -231,5 +231,5 @@ void ApiHandler::setupRoutes() {
 }
 
 void ApiHandler::setBattery(Battery* bat) { battery = bat; }
-void ApiHandler::setScale(Scale* scl) { scale = scl; }
+void ApiHandler::setDeviceState(DeviceState* state) { deviceState = state; }
 void ApiHandler::setWiFiManager(WiFiManager* wifi) { wifiManager = wifi; }

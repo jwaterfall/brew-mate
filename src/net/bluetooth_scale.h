@@ -4,7 +4,7 @@
 #include <NimBLEDevice.h>
 #include <functional>
 
-class Scale;
+struct DeviceState;
 
 using BluetoothEventHandler = std::function<void()>;
 
@@ -23,7 +23,7 @@ public:
     BluetoothScale(BluetoothScale&&) = delete;
     BluetoothScale& operator=(BluetoothScale&&) = delete;
 
-    void begin(Scale* scaleInstance);
+    void begin(DeviceState* state);
     void end();
     void update();
     bool isConnected() const;
@@ -46,7 +46,7 @@ private:
     static constexpr uint32_t WEIGHT_SEND_INTERVAL = 50;
     static constexpr uint32_t HEARTBEAT_INTERVAL = 2000;
 
-    Scale* scale;
+    DeviceState* deviceState;
     NimBLEServer* server;
     NimBLEService* service;
     NimBLECharacteristic* gaggiMateWeightCharacteristic;

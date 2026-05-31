@@ -1,5 +1,4 @@
-#ifndef API_HANDLER_H
-#define API_HANDLER_H
+#pragma once
 
 #include <Arduino.h>
 #include <functional>
@@ -10,14 +9,14 @@
 #include "logger.h"
 
 class Battery;
-class Scale;
 class WiFiManager;
+struct DeviceState;
 
 class ApiHandler {
 private:
     AsyncWebServer& server;
     Battery* battery;
-    Scale* scale;
+    DeviceState* deviceState;
     WiFiManager* wifiManager;
     
     void handleCors(AsyncWebServerRequest *request);
@@ -41,9 +40,6 @@ public:
     void setupRoutes();
     
     void setBattery(Battery* bat);
-    void setScale(Scale* scl);
+    void setDeviceState(DeviceState* state);
     void setWiFiManager(WiFiManager* wifi);
 };
-
-#endif
-

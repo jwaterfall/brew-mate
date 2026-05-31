@@ -4,9 +4,10 @@
 #include "display.h"
 #include "battery.h"
 #include "scale.h"
-#include "touchsensor.h"
+#include "touch_sensor.h"
 #include "buzzer.h"
 #include "config_manager.h"
+#include "device_state.h"
 #include "scale_app.h"
 #include "serial_protocol.h"
 #include "wifi_manager.h"
@@ -18,6 +19,7 @@ Scale scale;
 TouchSensor touchSensor;
 Buzzer buzzer;
 ScaleApp app;
+DeviceState deviceState;
 WiFiManager wifiManager;
 BluetoothScale bluetoothScale;
 
@@ -120,11 +122,11 @@ void setup() {
     }
 
     wifiManager.setBattery(&battery);
-    wifiManager.setScale(&scale);
+    wifiManager.setDeviceState(&deviceState);
 
-    bluetoothScale.begin(&scale);
+    bluetoothScale.begin(&deviceState);
     bluetoothScale.onTare([]() {
-        scale.tare();  // raises a tare request; the loop forwards it to ScaleApp
+        deviceState.requestTare();
     });
     Logger::info("Bluetooth initialized");
 }
@@ -147,7 +149,7 @@ void loop() {
         in.wifiConnected = wifiManager.isInitialized();
         in.wifiApMode = wifiManager.isApMode();
         in.bluetoothConnected = bluetoothScale.isConnected();
-        in.immediateTare = scale.consumeTareRequest();
+        in.immediateTare = deviceState.consumeTareRequest();
 
         String ip = wifiManager.isApMode() ? "192.168.4.1" : wifiManager.getConnectedIP().toString();
         strncpy(in.ipStr, ip.c_str(), sizeof(in.ipStr) - 1);
@@ -156,9 +158,11 @@ void loop() {
         // Always run the core so the web API / BLE weight stay live, even while
         // a host is driving the display in proxy mode.
         ScaleOutputs out = app.tick(in);
-        scale.setCachedWeight(out.display.weight);
-        battery.setCached(out.battery.voltage, out.battery.percent,
-                          out.battery.usb, out.battery.disconnected);
+        deviceState.weight = out.display.weight;
+        deviceState.batteryPercent = out.battery.percent;
+        deviceState.batteryVoltage = out.battery.voltage;
+        deviceState.usbConnected = out.battery.usb;
+        deviceState.batteryDisconnected = out.battery.disconnected;
 
         if (proxyMode) {
             // Stream raw reads up; the host renders and sends frames back

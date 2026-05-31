@@ -1,5 +1,4 @@
-#ifndef CONFIG_MANAGER_H
-#define CONFIG_MANAGER_H
+#pragma once
 
 #include <Arduino.h>
 #include <LittleFS.h>
@@ -158,6 +157,3 @@ public:
 };
 
 inline const char* ConfigManager::CONFIG_FILE = "/device_config.json";
-
-#endif
-

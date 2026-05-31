@@ -1,5 +1,4 @@
-#ifndef SCALE_APP_H
-#define SCALE_APP_H
+#pragma once
 
 // Hardware-agnostic core: turns raw sensor reads into processed weight, battery
 // state, timer, flow rate and the resulting display state. All signal
@@ -165,5 +164,3 @@ private:
     void handlePowerPress(uint32_t now);
     float computeFlowRate(uint32_t now, float weight);
 };
-
-#endif
