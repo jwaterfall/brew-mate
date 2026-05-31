@@ -57,3 +57,7 @@ ENV/
 *.bin
 *.hex
 
+# Host dev runner (built by scripts/build_host.sh)
+/host_runner
+.host_build/
+

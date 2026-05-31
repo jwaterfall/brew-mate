@@ -53,12 +53,15 @@ There is no automated test suite. Verification is done on-device over serial and
 
 `src/main.cpp` is the orchestrator. It instantiates each subsystem as a global object, wires them together in `setup()`, and drives everything from a single cooperative `loop()` — **no RTOS tasks or blocking waits in the main loop** (the HX711 stability check in `Scale::begin()` is the one startup exception). Timing is done with `millis()` deltas against interval constants (`MIN_UPDATE_INTERVAL`, `ANIMATION_INTERVAL`, etc.).
 
+**All signal processing lives in `ScaleApp` (`scale_app.{h,cpp}`)** — a hardware-agnostic core that turns a `RawInputs` snapshot (raw HX711 counts, ADC millivolts, raw pin levels) into a `ScaleOutputs` (processed weight, battery state, timer, flow rate, the `DisplayState` to render, buzzer command). The subsystem classes are thin: they do the literal pin/bus reads and actuation, nothing else. Weight calibration/tare/deadband/smoothing (`WeightProcessor`), the battery voltage→% curve (`BatteryProcessor`), and touch debounce/edge detection (`TouchProcessor`) all live in `ScaleApp`. This same core runs on-device in standalone mode **and** on the host during live development (see below), so there is one implementation. All `ScaleApp` timing is injected via `nowMs`, never read from a clock.
+
 Each subsystem is a **single self-contained class**, mostly **header-only** (the implementation lives inline in the `.h`); only `api_handler` and `bluetooth_scale` have separate `.cpp` files. The subsystems:
 
-- `Scale` (`scale.h`) — HX711 wrapper; tare, calibration factor, filtered weight reads.
-- `Battery` (`battery.h`) — ADC voltage reads through a divider, percentage/bar curve, USB-charging detection (VBUS pin) and battery-disconnect detection (switch pin). Calibration factors are persisted.
-- `Display` (`display.h`) — all SSD1306 rendering; `showBootScreen()`, `showMainScreen(...)` take primitive state, not subsystem pointers.
-- `TouchSensor` (`touchsensor.h`) — TTP223 inputs with debounce; exposes edge-triggered `isTarePressed()`/`isPowerPressed()`.
+- `Scale` (`scale.h`) — HX711 raw reader (`readRaw()`); calibration factor lives here but is applied in `WeightProcessor`. `getWeight()`/`tare()` are a cache/request pair backing the web API (the main loop pushes the processed weight in; `tare()` raises a request forwarded to `ScaleApp`).
+- `Battery` (`battery.h`) — raw ADC/pin reads (`readBatteryMv`/`readVbusMv`/`readSwitchRaw`); the processed percentage/voltage/USB/disconnect state is computed in `BatteryProcessor` and cached here for the web API.
+- `Display` (`display.h`) — SSD1306 glue: `begin()`, `showMainScreen(DisplayState)` (standalone), `drawFrame(buffer)` (blits a host-rendered framebuffer in proxy mode). The actual drawing is in `display_render.h`.
+- `display_render.h` — shared screen rendering into any `Adafruit_GFX&`, so the SSD1306 (device) and a `GFXcanvas1` (host) produce pixel-identical output.
+- `TouchSensor` (`touchsensor.h`) — raw TTP223 level reads (`readTareRaw`/`readPowerRaw`); debounce/edges are in `TouchProcessor`.
 - `Buzzer` (`buzzer.h`) — LEDC hardware-PWM tones.
 - `WiFiManager` (`wifi_manager.h`) — owns the `AsyncWebServer`; connects to saved STA credentials or falls back to the **`BrewMate` / `brewmate123` AP at `192.168.4.1`**; serves the SPA from LittleFS and delegates `/api/*` to `ApiHandler`.
 - `ApiHandler` (`api_handler.{h,cpp}`) — the HTTP API (see below). Holds non-owning pointers to `Battery`/`Scale`/`WiFiManager`, injected via setters.
@@ -95,6 +98,17 @@ Standard Preact SPA: `web/src/index.tsx` mounts `App`, which wraps a `Router` (`
 - Do not commit or push without explicit approval from the user.
 - When changing the web API, update **both** sides — the `ApiHandler` route and the web UI consumer — and keep the JSON shape in sync.
 
+### Live development (host dev server)
+
+Because all logic and rendering live in `ScaleApp` + `display_render.h` (shared, hardware-agnostic code), you can develop them on your laptop with no flashing:
+
+- Flash the firmware once, then run **`./scripts/dev_host.sh [port]`** (default `/dev/ttyACM0`). It builds `src/host/host_runner.cpp` and watches the shared sources, rebuilding + restarting on save.
+- The scale detects the running dev server (a `BMTAP` handshake over serial) and switches into **proxy mode**: it streams raw sensor reads up, the host runs `ScaleApp` and renders the OLED framebuffer, and streams it back for the device to blit. Stop the server (or unplug) and the scale reverts to a normal standalone device after ~1.5s. There is no separate firmware — it's one image with a runtime switch.
+- The serial protocol is in `serial_protocol.h`. The host build needs a C++ compiler (`g++`) and compiles the real Adafruit GFX library against a tiny Arduino shim in `src/host/compat/` for pixel-identical rendering (`host_runner` and `.host_build/` are gitignored build artifacts).
+- Edit `scale_app.cpp` for logic, `display_render.h` for the screen — both hot-reload. Editing the thin subsystem `.h` files or `main.cpp` still needs a reflash.
+
+Holding the tare touch pad for ~2s shows the device IP on screen (to find it for the web UI); the `INFO_HOLD_MS` threshold is in `ScaleApp`.
+
 ## Conventions
 
 - **C++ subsystems are self-contained, header-first classes.** Keep a subsystem's logic inside its own class; expose a small public surface (`begin()`, queries, a few setters). Split to a `.cpp` only when the implementation is large or pulls in heavy includes (as `api_handler`/`bluetooth_scale` do).
@@ -105,3 +119,4 @@ Standard Preact SPA: `web/src/index.tsx` mounts `App`, which wraps a `Router` (`
 - **Persisted state goes through `ConfigManager`** as part of `DeviceConfig`; don't write ad-hoc files to LittleFS. Add a field to the relevant config struct and extend `load`/`save`.
 - **Web file names:** components and pages are PascalCase (`WeightCard.tsx`, `Home/index.tsx`); utilities are camelCase (`api.ts`). Always reach the device through `apiUrl()`, never a hardcoded host.
 - Indentation is **4 spaces** in C++ files, **2 spaces** in the web project.
+- **Don't add comments unless they're necessary** — keep a comment only when removing it would genuinely hinder understanding of the code (a non-obvious constraint, a hardware quirk, why something is done a surprising way). Don't add comments that restate what the code already says.

@@ -20,14 +20,19 @@ private:
     float calibrationFactor;
     bool initialized;
 
+    // Back the web API: weight processing lives in ScaleApp, so getWeight()
+    // returns the cached processed value and tare() raises a request the main
+    // loop forwards to ScaleApp.
+    float cachedWeight = 0.0f;
+    bool tareRequested = false;
+
 public:
-    Scale(uint8_t dout = HX711_DOUT, uint8_t sck = HX711_SCK, float calibration = DEFAULT_CALIBRATION_FACTOR) 
-        : doutPin(dout), sckPin(sck), calibrationFactor(calibration), initialized(false) {
-    }
-    
+    Scale(uint8_t dout = HX711_DOUT, uint8_t sck = HX711_SCK, float calibration = DEFAULT_CALIBRATION_FACTOR)
+        : doutPin(dout), sckPin(sck), calibrationFactor(calibration), initialized(false) {}
+
     bool begin() {
         scale.begin(doutPin, sckPin);
-        
+
         unsigned long startTime = millis();
         while (!scale.is_ready()) {
             if (millis() - startTime > INIT_TIMEOUT_MS) {
@@ -36,13 +41,12 @@ public:
             }
             delay(INIT_CHECK_INTERVAL_MS);
         }
-        
+
         scale.set_scale(calibrationFactor);
-        
+
         unsigned long stabilityStart = millis();
         float lastReading = 0.0f;
         bool stable = false;
-        
         while (!stable && (millis() - stabilityStart < STABILITY_TIMEOUT_MS)) {
             float currentReading = scale.get_units(3);
             if (abs(currentReading - lastReading) < STABILITY_THRESHOLD && lastReading != 0.0f) {
@@ -52,55 +56,27 @@ public:
                 delay(100);
             }
         }
-        
+
         scale.tare();
         initialized = true;
         return true;
     }
-    
-    float getWeight() {
-        if (!initialized) return 0.0f;
-        
-        float rawWeight = scale.get_units();
-        
-        if (abs(rawWeight) < 0.3f) {
-            return 0.0f;
-        }
-        
-        return rawWeight;
+
+    long readRaw() { return initialized ? scale.read() : 0; }
+    bool isReady() { return initialized && scale.is_ready(); }
+
+    float getWeight() { return cachedWeight; }
+    void setCachedWeight(float weight) { cachedWeight = weight; }
+
+    void tare() { tareRequested = true; }
+    bool consumeTareRequest() {
+        bool requested = tareRequested;
+        tareRequested = false;
+        return requested;
     }
-    
-    void tare() {
-        if (initialized) {
-            scale.tare();
-        }
-    }
-    
-    void setCalibrationFactor(float factor) {
-        calibrationFactor = factor;
-        if (initialized) {
-            scale.set_scale(calibrationFactor);
-        }
-    }
-    
-    float getCalibrationFactor() {
-        return calibrationFactor;
-    }
-    
-    void calibrateScale(float knownWeight, int times = 10) {
-        if (initialized) {
-            scale.calibrate_scale(knownWeight, times);
-            calibrationFactor = scale.get_scale();
-        }
-    }
-    
-    bool isReady() {
-        return initialized && scale.is_ready();
-    }
-    
-    bool isInitialized() {
-        return initialized;
-    }
+
+    void setCalibrationFactor(float factor) { calibrationFactor = factor; }
+    float getCalibrationFactor() { return calibrationFactor; }
 };
 
 #endif
